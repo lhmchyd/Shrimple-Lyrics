@@ -3,7 +3,7 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 const axiosInstance = axios.create({
   timeout: 10000,
@@ -141,6 +141,5 @@ app.get('/lyrics', async (req, res) => {
   res.send(JSON.stringify(result, null, 2));
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Lyrics API running at http://localhost:${PORT}`);
-});
+// Export the Express API
+module.exports = app;
