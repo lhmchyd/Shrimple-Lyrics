@@ -131,14 +131,14 @@ const Footer: React.FC = () => {
   return (
     <>
       <footer className="bg-muted/30 border-t border-border text-center p-3 text-xs text-muted-foreground flex-shrink-0">
-        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center space-y-1 sm:space-y-0">
-          <p>
+        <div className="container mx-auto flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
+          <p className="text-center sm:text-left">
             Copyright &copy; {getCurrentYear()} {APP_NAME}. All rights reserved.
           </p>
-          <nav className="space-x-1.5 sm:space-x-3">
+          <nav className="flex flex-wrap justify-center items-center space-x-1.5 sm:space-x-3">
             <button 
               onClick={() => openModal(PRIVACY_POLICY_TITLE, PRIVACY_POLICY_CONTENT)} 
-              className="hover:text-primary transition-colors px-1.5 py-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="hover:text-primary transition-colors px-1 py-0.5 sm:px-1.5 sm:py-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               aria-label="View Privacy Policy"
             >
               Privacy Policy
@@ -146,7 +146,7 @@ const Footer: React.FC = () => {
             <span className="select-none">&bull;</span>
             <button 
               onClick={() => openModal(COOKIE_POLICY_TITLE, COOKIE_POLICY_CONTENT)} 
-              className="hover:text-primary transition-colors px-1.5 py-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="hover:text-primary transition-colors px-1 py-0.5 sm:px-1.5 sm:py-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               aria-label="View Cookie Policy"
             >
               Cookie Policy
@@ -154,7 +154,7 @@ const Footer: React.FC = () => {
             <span className="select-none">&bull;</span>
             <button 
               onClick={() => openModal(COPYRIGHT_INFO_TITLE, COPYRIGHT_INFO_CONTENT)} 
-              className="hover:text-primary transition-colors px-1.5 py-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              className="hover:text-primary transition-colors px-1 py-0.5 sm:px-1.5 sm:py-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               aria-label="View Copyright Information"
             >
               Copyright
