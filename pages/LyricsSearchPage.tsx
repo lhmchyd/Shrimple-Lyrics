@@ -1,10 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { LyricSearchResult } from '../types';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import LyricsSearchPageSkeleton from '../components/skeletons/LyricsSearchPageSkeleton'; 
 import MarkdownRenderer from '../components/MarkdownRenderer';
 import { Button } from '../components/ui/button';
+// Modal import removed as it's no longer used for lyrics expansion
+import { ScrollArea } from '../components/ui/scroll-area';
 
 // Manually include lucide-react icons
 const LucideIcons = {
@@ -26,6 +28,12 @@ const LucideIcons = {
   Download: (props: React.SVGProps<SVGSVGElement>) => ( 
     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
   ),
+  Maximize2: (props: React.SVGProps<SVGSVGElement>) => ( // Icon for entering fullscreen
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+  ),
+  X: (props: React.SVGProps<SVGSVGElement>) => ( // Icon for exiting fullscreen / closing
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+  ),
 };
 
 interface LyricsSearchPageProps {
@@ -43,6 +51,56 @@ const formatLyricsForNumberedDisplay = (lyricText?: string): string => {
   return lyricText.split('\n').map(line => `1. ${line}`).join('\n');
 };
 
+
+interface FullscreenLyricsViewProps {
+  songTitle?: string;
+  lyricsContent: string;
+  onClose: () => void;
+  activeLyricsTab: ActiveLyricsTab;
+  hasEnglish: boolean;
+  hasRomanized: boolean;
+  canInteract: boolean;
+}
+
+const FullscreenLyricsView: React.FC<FullscreenLyricsViewProps> = ({ 
+  songTitle, lyricsContent, onClose, activeLyricsTab, hasEnglish, hasRomanized, canInteract 
+}) => {
+  const displayTitle = songTitle && songTitle.toLowerCase() !== 'song title not available' ? songTitle : 'Lyrics';
+  
+  let lyricTypeIndicator = "";
+  if (hasEnglish && hasRomanized) {
+    lyricTypeIndicator = activeLyricsTab === 'english' ? '(English)' : '(Romanized)';
+  } else if (hasEnglish) {
+    lyricTypeIndicator = '(English)';
+  } else if (hasRomanized) {
+    lyricTypeIndicator = '(Romanized)';
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-background text-foreground flex flex-col animate-fadeIn" role="dialog" aria-modal="true" aria-labelledby="fullscreen-lyrics-title">
+      <header className="flex items-center justify-between p-3 sm:p-4 border-b border-border flex-shrink-0">
+        <h2 id="fullscreen-lyrics-title" className="text-lg sm:text-xl font-semibold truncate">
+          {displayTitle}
+          {lyricTypeIndicator && <span className="text-sm font-normal text-muted-foreground ml-2">{lyricTypeIndicator}</span>}
+        </h2>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close fullscreen lyrics (Escape key)">
+          <LucideIcons.X className="w-6 h-6" />
+        </Button>
+      </header>
+      <ScrollArea className="flex-grow p-4 sm:p-6">
+        {!canInteract || !lyricsContent ? (
+          <p className="text-muted-foreground text-center py-10 text-base sm:text-lg">
+            Lyrics are not available for this selection.
+          </p>
+        ) : (
+          <MarkdownRenderer markdownContent={lyricsContent} className="lyrics-display prose-base sm:prose-lg" />
+        )}
+      </ScrollArea>
+    </div>
+  );
+};
+
+
 const LyricsSearchPage: React.FC<LyricsSearchPageProps> = ({
   searchResult,
   isLoading,
@@ -51,6 +109,7 @@ const LyricsSearchPage: React.FC<LyricsSearchPageProps> = ({
   currentQuery
 }) => {
   const [activeLyricsTab, setActiveLyricsTab] = useState<ActiveLyricsTab>('english');
+  const [isLyricsFullscreen, setIsLyricsFullscreen] = useState(false);
 
   const hasActualEnglishLyrics = !!searchResult?.englishLyrics && searchResult.englishLyrics !== "English lyrics not available or not found.";
   const hasActualRomanizedLyrics = !!searchResult?.romanizedLyrics && searchResult.romanizedLyrics.trim() !== "";
@@ -72,6 +131,35 @@ const LyricsSearchPage: React.FC<LyricsSearchPageProps> = ({
       setActiveLyricsTab('english'); 
     }
   }, [searchResult, hasActualEnglishLyrics, hasActualRomanizedLyrics]);
+
+  // Effect for Escape key to close fullscreen
+  useEffect(() => {
+    if (!isLyricsFullscreen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsLyricsFullscreen(false);
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isLyricsFullscreen]);
+
+  // Effect to manage body overflow when fullscreen
+   useEffect(() => {
+    const originalOverflow = document.body.style.overflow;
+    if (isLyricsFullscreen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = originalOverflow;
+    }
+    return () => {
+      document.body.style.overflow = originalOverflow; // Restore on component unmount or if state changes back
+    };
+  }, [isLyricsFullscreen]);
+
 
   const formattedEnglishLyrics = formatLyricsForNumberedDisplay(searchResult?.englishLyrics);
   const formattedRomanizedLyrics = formatLyricsForNumberedDisplay(searchResult?.romanizedLyrics);
@@ -123,14 +211,38 @@ const LyricsSearchPage: React.FC<LyricsSearchPageProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const canDownloadCurrentTab = () => {
+  const canInteractWithLyrics = useCallback(() => {
     if (!searchResult) return false;
     if (activeLyricsTab === 'english') return hasActualEnglishLyrics;
     if (activeLyricsTab === 'romanized') return hasActualRomanizedLyrics;
-    return false; 
-  };
+    // If no tabs (only one type of lyrics available), check that one
+    if (!hasActualRomanizedLyrics && showEnglishLyricsSectionWhenNoTabs) return hasActualEnglishLyrics;
+    // This case might be redundant if logic above is correct, but covers if only romanized is available AND english section isn't forced
+    if (hasActualRomanizedLyrics && !hasActualEnglishLyrics) return hasActualRomanizedLyrics;
+    
+    // Final fallback based on which lyrics are intended to be shown without tabs.
+    if (showEnglishLyricsSectionWhenNoTabs) return hasActualEnglishLyrics;
+    if (!showEnglishLyricsSectionWhenNoTabs && hasActualRomanizedLyrics) return hasActualRomanizedLyrics;
+
+    return false;
+  }, [searchResult, activeLyricsTab, hasActualEnglishLyrics, hasActualRomanizedLyrics, showEnglishLyricsSectionWhenNoTabs]);
   
-  const isDownloadDisabled = isLoading || !!error || !searchResult || !canDownloadCurrentTab();
+  const areLyricActionsDisabled = isLoading || !!error || !searchResult || !canInteractWithLyrics();
+
+  if (isLyricsFullscreen && searchResult) {
+    const lyricsForFullscreen = activeLyricsTab === 'english' ? formattedEnglishLyrics : formattedRomanizedLyrics;
+    return (
+      <FullscreenLyricsView
+        songTitle={searchResult.songTitle}
+        lyricsContent={lyricsForFullscreen}
+        onClose={() => setIsLyricsFullscreen(false)}
+        activeLyricsTab={activeLyricsTab}
+        hasEnglish={hasActualEnglishLyrics}
+        hasRomanized={hasActualRomanizedLyrics}
+        canInteract={canInteractWithLyrics()}
+      />
+    );
+  }
 
   if (!isChatActive && !isLoading) {
     return null;
@@ -216,17 +328,28 @@ const LyricsSearchPage: React.FC<LyricsSearchPageProps> = ({
                         <LucideIcons.Languages className="text-primary h-5 w-5 flex-shrink-0" /> 
                         <CardTitle className="text-xl">Lyrics</CardTitle>
                     </div>
-                    <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={handleDownloadLyrics} 
-                        disabled={isDownloadDisabled}
-                        aria-label="Download lyrics"
-                        title="Download lyrics"
-                        className="ml-auto flex-shrink-0"
-                    >
-                        <LucideIcons.Download className="w-5 h-5" />
-                    </Button>
+                    <div className="flex items-center space-x-1 flex-shrink-0">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => setIsLyricsFullscreen(true)} 
+                            disabled={areLyricActionsDisabled}
+                            aria-label="Fullscreen lyrics"
+                            title="Fullscreen lyrics"
+                        >
+                            <LucideIcons.Maximize2 className="w-5 h-5" />
+                        </Button>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleDownloadLyrics} 
+                            disabled={areLyricActionsDisabled}
+                            aria-label="Download lyrics"
+                            title="Download lyrics"
+                        >
+                            <LucideIcons.Download className="w-5 h-5" />
+                        </Button>
+                    </div>
                   </div>
                </CardHeader>
               <CardContent className="py-4">
@@ -319,6 +442,7 @@ const LyricsSearchPage: React.FC<LyricsSearchPageProps> = ({
             <p className="text-xs md:text-sm">Search for lyrics or choose an item from your history.</p>
         </div>
       )}
+      {/* Modal component is no longer used for lyrics, so it's removed from here */}
     </div>
   );
 };
