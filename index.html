@@ -1,0 +1,107 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shrimple Lyric</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Custom scrollbar for webkit browsers - Neutral Dark Theme */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: hsl(var(--background)); /* Match the application background */
+    }
+    ::-webkit-scrollbar-thumb {
+      background: hsl(0, 0%, 30%); /* Neutral dark gray */
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: hsl(0, 0%, 40%); /* Lighter neutral dark gray */
+    }
+    /* Fallback body styles, though JS should apply Tailwind classes */
+    body {
+      background-color: hsl(220, 10%, 4.9%); /* Default to --background HSL */
+      color: hsl(0, 0%, 98%);           /* Default to --foreground HSL */
+      overflow: hidden; /* Prevent body scroll with new fixed layout */
+    }
+
+    /* Simple FadeIn animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fadeIn {
+      animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    /* Styles for Numbered Lyrics Display */
+    .lyrics-display ol {
+      list-style-type: none !important; /* Override prose default list style */
+      counter-reset: line-number;
+      padding-left: 0 !important; /* Override prose padding */
+      margin-top: 0 !important; /* Reset prose margins */
+      margin-bottom: 0 !important; /* Reset prose margins */
+    }
+
+    .lyrics-display li {
+      counter-increment: line-number;
+      display: flex !important; 
+      align-items: baseline; 
+      margin-top: 0.2em !important; /* Adjust for tighter line spacing */
+      margin-bottom: 0.2em !important; /* Adjust for tighter line spacing */
+      padding-left: 0 !important; /* Override prose padding for li */
+    }
+
+    .lyrics-display li::before {
+      content: counter(line-number);
+      min-width: 2.5em; /* Space for line numbers (e.g., up to 3 digits) */
+      padding-right: 1em; /* Space between number and lyric text */
+      text-align: right;
+      color: hsl(var(--muted-foreground)); /* Dimmer color for line numbers */
+      font-size: 0.85em; /* Slightly smaller font for line numbers */
+      /* Consider adding font-family: monospace; if numbers look misaligned */
+      user-select: none; /* Make line numbers non-selectable */
+    }
+    
+    /* Ensure paragraphs within list items don't add extra vertical space */
+    .lyrics-display li p {
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
+      flex-grow: 1; /* Allow text to take remaining space */
+    }
+
+    /* Handle lines that are empty in the original markdown (e.g. "1. \n")
+       These might render as <li><p></p></li>.
+       The li p rule above should handle p margins.
+       If an li is truly empty, the ::before will still apply.
+    */
+     .lyrics-display li:empty::before {
+        /* This ensures even if an <li> is completely empty, it still shows its number and takes up space */
+         content: counter(line-number);
+    }
+
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@^19.1.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.1.0/",
+    "react/": "https://esm.sh/react@^19.1.0/",
+    "lucide-react": "https://esm.sh/lucide-react@^0.511.0",
+    "remark-gfm": "https://esm.sh/remark-gfm@^4.0.1",
+    "react-markdown": "https://esm.sh/react-markdown@^10.1.0",
+    "@google/genai": "https://esm.sh/@google/genai@^1.0.1"
+  }
+}
+</script>
+</head>
+<body class="antialiased">
+  <div id="root"></div>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html><link rel="stylesheet" href="index.css">
+<script src="index.tsx" type="module"></script>
