@@ -7,9 +7,11 @@ export interface ArtistMetadata {
 export interface LyricSearchResult {
   songTitle?: string; 
   artistMetadata?: ArtistMetadata;
+  originalLanguage?: string; // Added original language
+  originalLyrics?: string; // Added original lyrics
   englishLyrics: string;
   romanizedLyrics?: string; 
-  songDescription?: string; // Added song description
+  songDescription?: string; 
   sources: GroundingSource[];
 }
 

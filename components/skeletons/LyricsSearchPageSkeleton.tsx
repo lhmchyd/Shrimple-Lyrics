@@ -57,15 +57,19 @@ const LyricsSearchPageSkeleton: React.FC<LyricsSearchPageSkeletonProps> = ({ cur
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 flex-grow">
               <SkeletonPlaceholder className="h-5 w-5 rounded-full flex-shrink-0" />
-              <SkeletonPlaceholder className="h-6 w-1/4" /> {/* "Lyrics" */}
+              <SkeletonPlaceholder className="h-6 w-1/3" /> {/* "Lyrics (Original: Language)" */}
             </div>
-            <SkeletonPlaceholder className="h-8 w-8 rounded-md flex-shrink-0" /> {/* Download button */}
+            <div className="flex items-center space-x-1">
+                <SkeletonPlaceholder className="h-8 w-8 rounded-md flex-shrink-0" /> {/* Fullscreen button */}
+                <SkeletonPlaceholder className="h-8 w-8 rounded-md flex-shrink-0" /> {/* Download button */}
+            </div>
           </div>
         </CardHeader>
         <CardContent className="py-4">
           <div className="mb-4 flex space-x-2 border-b border-border">
             <SkeletonPlaceholder className="h-8 w-20 py-1" /> {/* Tab 1 */}
             <SkeletonPlaceholder className="h-8 w-20 py-1" /> {/* Tab 2 */}
+            <SkeletonPlaceholder className="h-8 w-20 py-1" /> {/* Tab 3 (optional) */}
           </div>
           <div className="bg-muted/30 p-4 rounded-md space-y-3">
             {[...Array(8)].map((_, i) => (

@@ -79,7 +79,7 @@ const HistorySidebar: React.FC<HistorySidebarProps> = ({
       {/* Header: Title and Toggle/Close Button */}
       {isMobileContext ? (
         <div className="flex items-center justify-between pb-3 border-b border-border mb-3 pt-1">
-          <h2 className="text-lg font-semibold text-foreground truncate pr-2">Menu</h2>
+          <h2 id="mobile-sidebar-title" className="text-lg font-semibold text-foreground truncate pr-2">Shrimple Lyric</h2>
           <Button 
             onClick={onCloseMobileSidebar} 
             variant="ghost" 

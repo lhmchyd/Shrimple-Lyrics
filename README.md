@@ -4,110 +4,177 @@ Shrimple Lyric is a web application designed to help users find song lyrics, art
 
 ## ✨ Features
 
-*   **Lyric Search:** Find English and Romanized lyrics for a vast catalog of songs.
-*   **Artist Information:** Get brief biographies and notable facts about artists.
-*   **Song Meanings:** Discover interpretations and summaries of songs.
-*   **Google Search Grounding:** Utilizes Google Search via the Gemini API to provide up-to-date and relevant information, with sources cited.
-*   **Client-Side Caching:** Search history and results are stored locally using IndexedDB for quick access and offline availability.
-*   **Responsive Design:** Adapts to various screen sizes, from mobile to desktop.
-*   **Dark Theme:** Modern, aesthetically pleasing dark UI based on Shadcn UI principles.
-*   **Rate Limiting:** Built-in client-side rate limiting to manage API calls effectively (30-second cooldown, max 5 calls per hour).
-*   **History Management:**
-    *   View and select previous searches.
-    *   Edit search query titles.
-    *   Delete individual history items.
-    *   Search within your history.
-*   **Lyrics Download:** Download lyrics (English or Romanized) as a .txt file.
-*   **Skeleton Loaders:** Smooth loading experience with skeleton placeholders.
-*   **Accessibility:** ARIA attributes and keyboard navigation considerations.
-*   **Legal Modals:** Includes boilerplate for Privacy Policy, Cookie Policy, and Copyright Information.
+*   **Comprehensive Lyric Search:** Find original, English, and Romanized lyrics.
+*   **Artist & Song Insights:** Get artist bios and song meaning summaries.
+*   **Google Search Grounding:** Results are enhanced by Google Search (sources cited).
+*   **Offline Access:** Client-side caching via IndexedDB for history and results.
+*   **Responsive Design:** Adapts seamlessly from mobile to desktop.
+*   **Modern Dark Theme:** Aesthetically pleasing UI based on Shadcn UI principles.
+*   **API Rate Limiting:** Client-side controls (30s cooldown, 5 calls/hour) with UI feedback.
+*   **Rich History Management:** View, select, edit titles, delete, and search history.
+*   **Lyrics Download:** Save lyrics as `.txt` files.
+*   **Smooth Loading:** Skeleton placeholders for a better user experience.
+*   **Accessibility:** ARIA attributes and keyboard navigation.
+*   **Legal Modals:** Includes templates for Privacy, Cookies, and Copyright.
 
 ## 🛠️ Tech Stack
 
 *   **Frontend:** React, TypeScript
-*   **Styling:** Tailwind CSS (with Shadcn UI-like theme and custom CSS variables)
+*   **Styling:** Tailwind CSS (with a Shadcn UI-like theme)
 *   **API:** Google Gemini API (`@google/genai`)
-    *   Model for text: `gemini-2.5-flash-preview-04-17`
-*   **Local Storage:** IndexedDB for caching search history and results.
-*   **Build/Dev:** Esbuild (implied by the no-config setup using `esm.sh` for imports)
-*   **Icons:** Lucide React (manually included SVG components)
-*   **Markdown Rendering:** `react-markdown` with `remark-gfm`
+    *   Model: `gemini-2.5-flash-preview-04-17`
+*   **Local Storage:** IndexedDB
+*   **Build/Dev:** ES Modules via `esm.sh` (no local build step required for basic use)
+*   **Icons:** Lucide React (manually included SVGs)
+*   **Markdown:** `react-markdown` with `remark-gfm`
 
-## 🚀 Getting Started
+## 🚀 Getting Started & Usage
 
-This application is designed to run directly in a browser environment that supports ES modules and modern JavaScript.
+This application can be run locally for testing or deployed to a static hosting provider.
 
 ### Prerequisites
 
-*   A modern web browser (Chrome, Firefox, Edge, Safari).
-*   An **API Key** for the Google Gemini API.
+1.  **A Modern Web Browser:** Chrome, Firefox, Edge, Safari.
+2.  **Google Gemini API Key:** You'll need an API key from [Google AI Studio](https://aistudio.google.com/app/apikey).
 
-### Environment Variables
+### Understanding API Key Handling
 
-The application expects the Google Gemini API key to be available as an environment variable:
+The application needs your Gemini API Key. It expects this key to be available via `process.env.API_KEY`.
 
-*   `process.env.API_KEY`: Your Google Gemini API Key.
+*   **Client-Side (Default for `geminiService.ts`):** The main lyric search service (`geminiService.ts`) currently makes calls directly from the browser to the Gemini API. This is simpler for quick local testing but is **not secure for production** as your API key can be exposed.
+*   **Server-Side (Recommended for Production - using `api/lyrics.ts`):** The `api/lyrics.ts` file is a serverless function (e.g., for Vercel) that acts as a proxy. This keeps your API key secure on the server. To use this, you'd modify `geminiService.ts` to call this backend endpoint instead of Google directly.
 
-**Important:** The application code directly references `process.env.API_KEY`. In a typical deployment (e.g., Vercel, Netlify, or a custom Node.js server serving the static files), you would set this environment variable in your hosting provider's settings or your server environment. For local development without a build process that injects environment variables, you might need to manually define `process.env.API_KEY` in your browser's console or use a tool that can serve static files with environment variable injection (though the current setup does not include such a tool).
+### Option 1: Local Development (Client-Side API Key - Quick Test 🧪)
 
-The `/api/lyrics.ts` serverless function (intended for platforms like Vercel) also requires `API_KEY` to be set in its environment.
+This method uses the default `geminiService.ts` which calls the Gemini API from the client.
 
-### Running the Application
-
-1.  Ensure the `API_KEY` is accessible in the environment where the application will run (either client-side for direct API calls if `geminiService.ts` is used directly, or server-side if calls are routed through `/api/lyrics.ts`).
-2.  Serve the `index.html` file using a simple HTTP server.
-    *   Example using `npx serve`:
-        ```bash
-        npx serve .
+1.  **Provide API Key (Choose one - TEMPORARY & INSECURE):**
+    *   **In `index.html` (Easiest for testing):**
+        Open `index.html`. Before the line `<script type="module" src="/index.tsx"></script>`, add:
+        ```html
+        <script>
+          window.process = { env: { API_KEY: "YOUR_GEMINI_API_KEY_HERE" } };
+        </script>
         ```
-3.  Open the application in your browser (usually `http://localhost:3000` or `http://localhost:5000` depending on the server).
+        Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key.
+        **⚠️ IMPORTANT: Remove this before committing your code or deploying! This method exposes your API key in the client-side code.**
+    *   **In Browser Console (Per session):**
+        Open your browser's developer console and execute:
+        ```javascript
+        window.process = { env: { API_KEY: "YOUR_GEMINI_API_KEY_HERE" } };
+        ```
+        You might need to refresh the page. This setting is lost when you close the tab/browser.
+
+2.  **Serve the Files:**
+    Use any simple HTTP server. If you have Node.js installed:
+    ```bash
+    npx serve .
+    ```
+    This will typically serve the application at `http://localhost:3000` or `http://localhost:5000`.
+
+3.  **Access:** Open the URL from the previous step in your browser.
+
+### Option 2: Local Development (Serverless Function - More Secure Setup 🛡️)
+
+This method involves using the `api/lyrics.ts` serverless function locally, which is a better practice for API key security, and simulates a deployment environment.
+
+1.  **Modify `geminiService.ts`:**
+    You need to change `services/geminiService.ts` to make requests to your local serverless function endpoint (`/api/lyrics`) instead of calling the Google Gemini API directly.
+    *   Locate the `searchLyrics` function in `services/geminiService.ts`.
+    *   Replace the `ai.models.generateContent(...)` call with a `fetch` call to your API route.
+        For example (conceptual change):
+        ```typescript
+        // Before:
+        // const geminiResponse: GenerateContentResponse = await ai.models.generateContent({ ... });
+        // return parseGeminiResponse(geminiResponse);
+
+        // After:
+        const response = await fetch(`/api/lyrics?query=${encodeURIComponent(query)}`);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || `API request failed with status ${response.status}`);
+        }
+        const data: LyricSearchResult = await response.json();
+        return data; // Assuming api/lyrics.ts returns LyricSearchResult
+        ```
+        *Note: The `parseGeminiResponse` part would be handled by `api/lyrics.ts`.*
+
+2.  **Install Vercel CLI (if you don't have it):**
+    ```bash
+    npm install -g vercel
+    ```
+
+3.  **Create Local Environment File:**
+    In the project root directory, create a file named `.env.development.local`. Add your API key to this file:
+    ```env
+    API_KEY=YOUR_GEMINI_API_KEY_HERE
+    ```
+    Replace `YOUR_GEMINI_API_KEY_HERE` with your actual key. Vercel CLI will automatically load this.
+
+4.  **Run Development Server with Vercel CLI:**
+    ```bash
+    vercel dev
+    ```
+    This command serves your `index.html`, runs the `api/lyrics.ts` function (making the `API_KEY` from your `.env` file available to it), and typically makes the app available at `http://localhost:3000`.
+
+5.  **Access:** Open the URL provided by `vercel dev`.
+
+### Option 3: Deployment (Server-Side API Key - Production ✨)
+
+For deploying to a platform like Vercel, Netlify, or other hosts that support serverless functions and environment variables:
+
+1.  **Ensure `geminiService.ts` Calls Your Backend:**
+    Make sure `services/geminiService.ts` is modified (as described in "Option 2, Step 1") to call your serverless function endpoint (e.g., `/api/lyrics`) and NOT the Google Gemini API directly.
+
+2.  **Configure Environment Variable on Hosting Provider:**
+    In your hosting provider's settings (e.g., Vercel Project Settings > Environment Variables), set the `API_KEY` environment variable to your Google Gemini API Key. This key will be accessible to your serverless function (`api/lyrics.ts`).
+
+3.  **Deploy:**
+    Follow your hosting provider's instructions to deploy the project. If using Vercel, connecting your Git repository is often the easiest way. Vercel will automatically detect the `api` folder and deploy the serverless function.
 
 ## 📂 Project Structure
 
-*   `index.html`: The main HTML entry point.
-*   `index.tsx`: The main React application entry point, initializes Tailwind CSS custom theme.
-*   `App.tsx`: The root React component, managing state, routing (implicitly), and main layout.
-*   `metadata.json`: Basic application metadata.
-*   `types.ts`: TypeScript type definitions.
-*   **`components/`**: Reusable UI components.
-    *   `ui/`: Shadcn UI-like primitive components (Button, Card, Input, ScrollArea).
-    *   `skeletons/`: Skeleton loader components.
-    *   Other specific components like `Footer.tsx`, `HistorySidebar.tsx`, `MarkdownRenderer.tsx`, `Modal.tsx`, `SearchInputArea.tsx`.
-*   **`hooks/`**: Custom React hooks (e.g., `useLocalStorage.ts`).
-*   **`pages/`**: Page-level components (e.g., `LyricsSearchPage.tsx`).
-*   **`services/`**: Services for API calls and local data management.
-    *   `geminiService.ts`: Handles communication with the Google Gemini API (client-side version).
-    *   `indexedDBService.ts`: Manages IndexedDB operations for caching.
-*   **`api/`**: Serverless function(s).
-    *   `lyrics.ts`: A Vercel-style serverless function to proxy requests to the Gemini API. This helps protect the API key if client-side calls are not desired.
+*   `index.html`: Main HTML file.
+*   `index.tsx`: React app entry point, Tailwind CSS theme setup.
+*   `App.tsx`: Root React component, state management, layout.
+*   `metadata.json`: Basic app info.
+*   `types.ts`: TypeScript definitions.
+*   `api/`: Serverless functions.
+    *   `lyrics.ts`: Backend proxy for Gemini API calls (recommended for production).
+*   `components/`: UI components.
+    *   `ui/`: Shadcn UI-inspired primitives (Button, Card, etc.).
+    *   `skeletons/`: Loading state placeholders.
+    *   Other functional components (`HistorySidebar.tsx`, `MarkdownRenderer.tsx`, etc.).
+*   `hooks/`: Custom React hooks (`useLocalStorage.ts`).
+*   `pages/`: Page components (`LyricsSearchPage.tsx`).
+*   `services/`: Logic for API calls and local data.
+    *   `geminiService.ts`: Client-side Gemini API interaction (default, consider modifying for production).
+    *   `indexedDBService.ts`: IndexedDB cache management.
 
-## 🚦 Rate Limiting
+## 🔑 Key Functionalities Explained
 
-The application implements client-side rate limiting to prevent excessive API calls:
-*   **Cooldown:** A 30-second cooldown period between consecutive API calls.
-*   **Hourly Limit:** A maximum of 5 API calls per hour.
-The UI provides feedback to the user when these limits are active.
+### Rate Limiting
+The app includes client-side rate limiting to manage API usage:
+*   **Cooldown:** 30 seconds between API calls.
+*   **Hourly Limit:** Max 5 calls per hour.
+The UI provides feedback when these limits are active.
 
-## 🎨 Styling
+### Styling & UI
+*   **Tailwind CSS:** For rapid, utility-first styling.
+*   **Shadcn UI-inspired Theme:** A custom dark theme using CSS variables for a consistent and modern look.
+*   **Custom Scrollbars & Numbered Lyrics:** Enhanced visual details for better usability.
 
-*   **Tailwind CSS:** Used for utility-first styling.
-*   **Shadcn UI-like Theme:** A custom dark theme is implemented using CSS variables, mimicking the style of Shadcn UI. Colors and border-radius are configurable via CSS variables injected in `index.tsx`.
-*   **Custom Scrollbars:** Styled scrollbars for Webkit browsers to match the dark theme.
-*   **Numbered Lyrics Display:** Custom CSS in `index.html` ensures lyrics are displayed with line numbers.
+### Privacy & Data Handling
+*   **Search Queries:** Sent to the Google Gemini API (either directly from client or via your serverless function).
+*   **Local Storage:** Search history and cached results are stored in the user's browser using IndexedDB. This data is not transmitted to any application-owned server.
+*   **Legal Information:** The footer provides access to template Privacy Policy, Cookie Policy, and Copyright information modals.
 
-## 🔒 Privacy and Data
+## 📝 Development Notes
 
-*   **Search Queries:** Sent to the Google Gemini API.
-*   **Local Storage:** Search history and cached results are stored in the user's browser via IndexedDB. This data is not transmitted to any server owned by the application.
-*   **Footer Links:** The footer contains links to modal dialogs for Privacy Policy, Cookie Policy, and Copyright Information (with placeholder content).
-
-## 📝 Notes
-
-*   The application uses `esm.sh` for CDN-based imports of React and other dependencies, simplifying the setup by avoiding a local `node_modules` folder and complex build configurations.
-*   Lucide icons are manually included as SVG components to reduce dependency size and complexity.
-*   The API key handling relies on `process.env.API_KEY`. Ensure this is correctly configured in your deployment environment.
-*   The `geminiService.ts` makes direct client-side calls to the Gemini API. For production, it's often recommended to proxy API calls through a backend (like the provided `/api/lyrics.ts` serverless function) to protect the API key. The application currently uses the client-side service.
+*   **ESM Imports:** The project uses `esm.sh` for CDN-based imports of React and other dependencies, simplifying setup by avoiding a local `node_modules` folder and complex build configurations for basic use.
+*   **Lucide Icons:** Icons are manually included as SVG components for optimized delivery.
+*   **API Key Security:**
+    *   The default client-side API calls in `geminiService.ts` are convenient for quick local testing but **expose your API key**.
+    *   For any deployment or more secure local development, modify `geminiService.ts` to route API calls through the `api/lyrics.ts` serverless function, which keeps your API key on the server-side, protected by environment variables.
 
 ---
-
-This README provides a comprehensive overview of Shrimple Lyric.

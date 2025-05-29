@@ -1,5 +1,5 @@
 {
-  "name": "Prod. Mobile, Rate Limit",
+  "name": "Prod. Skeleton, Original Lyrics",
   "description": "A lyrics search tool named Shrimple Lyric, powered by the Gemini API, styled with a Shadcn UI-like dark theme.",
   "requestFramePermissions": [],
   "prompt": ""

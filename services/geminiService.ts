@@ -39,13 +39,23 @@ const extractSection = (text: string, startMarker: string, endMarkers: string[])
   }
   
   const extracted = text.substring(startIndexActual, endIndexActual).trim();
-  return extracted === "" ? null : extracted;
+  // Return null if extracted is empty or common "not available" phrases, case-insensitively
+  if (extracted === "" || 
+      extracted.toLowerCase() === "not available" || 
+      extracted.toLowerCase() === "not applicable" ||
+      extracted.toLowerCase() === "full lyrics restricted" ||
+      extracted.toLowerCase() === "lyrics not available") {
+    return null;
+  }
+  return extracted;
 };
 
 const orderedSectionMarkers = [
     "Song Title:",
     "Artist Information:",
     "Song Meaning/Summary (based on English lyrics you generate):",
+    "Original Language:",
+    "Original Lyrics:",
     "English Lyrics:",
     "Romanized Lyrics:",
 ];
@@ -81,11 +91,15 @@ Bio: [Provide a brief artist biography or notable facts. If not available, state
 Song Meaning/Summary (based on English lyrics you generate):
 [Provide a brief (2-3 sentences) summary or interpretation of the song based on the lyrics you generate. If lyrics are unavailable or meaning is too ambiguous, state "Not available".]
 
+Original Language: [Detected Original Language of the Song - e.g., Korean, Japanese, English, Spanish, Russian. If the song is instrumental, state 'Instrumental'. If mixed, state primary language or 'Mixed'. If not available, state "Not available".]
+
+Original Lyrics: [Provide the full lyrics in the Original Language identified above. If the Original Language is English, provide the English lyrics here. If instrumental, state 'Instrumental'. If restricted, state so. If not available, state "Not available".]
+
 English Lyrics:
-[Provide the full English lyrics for the song. If restricted, state so.]
+[Provide the full English lyrics for the song. If the original language is English and you've already provided them under "Original Lyrics", you can state "Same as Original Lyrics" or re-list them. If restricted, state so. If not available, state "Not available".]
 
 Romanized Lyrics:
-[Provide the full Romanized lyrics for the song, if applicable. If not applicable for the song's language, state "Not applicable". If restricted, state so.]
+[Provide the full Romanized lyrics for the song, if applicable (e.g., for languages not using a Latin-based script such as Korean, Japanese, Russian, Greek, Arabic, Hindi, Thai, etc.). If the original language already uses a Latin script (e.g., English, Spanish, Indonesian), state "Not applicable". If restricted, state "Full lyrics restricted". If not available, state "Not available".]
 
 Please ensure each section is clearly delineated.`;
 
@@ -105,85 +119,80 @@ Please ensure each section is clearly delineated.`;
       if (geminiResponse?.candidates?.[0]?.finishReason && geminiResponse.candidates[0].finishReason !== "STOP") {
         errorMessage = `API request finished with reason: ${geminiResponse.candidates[0].finishReason}. No valid text content was returned.`;
       }
-      // Log the full response object for better debugging if text is missing.
       console.error('[geminiService] Gemini API response error (missing text). Full response:', JSON.stringify(geminiResponse, null, 2));
       throw new Error(errorMessage);
     }
     
     const rawText = geminiResponse.text;
-    console.log("[geminiService] Raw text received from Gemini:\n", rawText.substring(0, 300) + (rawText.length > 300 ? "..." : ""));
+    console.log("[geminiService] Raw text received from Gemini:\n", rawText.substring(0, 500) + (rawText.length > 500 ? "..." : ""));
     
     let songTitle: string | undefined = "Song title not available";
     let artistMetadata: ArtistMetadata | undefined;
     let songDescription: string | undefined = undefined;
+    let originalLanguage: string | undefined = undefined;
+    let originalLyrics: string | undefined = undefined;
     let englishLyrics = "English lyrics not available or not found.";
     let romanizedLyrics: string | undefined = undefined;
 
     const songTitleText = extractSection(rawText, "Song Title:", getEndMarkersForSection("Song Title:"));
-    if (songTitleText && songTitleText.trim() !== "" && songTitleText.toLowerCase() !== "not available") {
-      songTitle = songTitleText.trim();
+    if (songTitleText) {
+      songTitle = songTitleText;
     }
 
     const artistInfoText = extractSection(rawText, "Artist Information:", getEndMarkersForSection("Artist Information:"));
     if (artistInfoText) {
       const nameMatch = artistInfoText.match(/Name:\s*([\s\S]*?)(?=\nBio:|$)/i);
       const bioMatch = artistInfoText.match(/Bio:\s*([\s\S]*)/i);
-      let parsedName = nameMatch && nameMatch[1] ? nameMatch[1].trim() : "Not available";
-      let parsedBio = bioMatch && bioMatch[1] ? bioMatch[1].trim() : undefined;
-      if (parsedBio?.toLowerCase() === "not available" || parsedBio === "") parsedBio = undefined;
-      if (parsedName.toLowerCase() === "not available" || parsedName === "") parsedName = "Artist name not available";
+      let parsedName = nameMatch?.[1]?.trim();
+      let parsedBio = bioMatch?.[1]?.trim();
+      if (!parsedName || parsedName.toLowerCase() === "not available") parsedName = "Artist name not available";
+      if (!parsedBio || parsedBio.toLowerCase() === "not available") parsedBio = undefined;
       artistMetadata = { name: parsedName, bio: parsedBio };
     }
 
     const songDescriptionText = extractSection(rawText, "Song Meaning/Summary (based on English lyrics you generate):", getEndMarkersForSection("Song Meaning/Summary (based on English lyrics you generate):"));
-    if (songDescriptionText && songDescriptionText.toLowerCase() !== "not available" && songDescriptionText.toLowerCase() !== "not applicable" && songDescriptionText.trim() !== "") {
-      songDescription = songDescriptionText.trim();
+    if (songDescriptionText) {
+      songDescription = songDescriptionText;
+    }
+    
+    const originalLanguageText = extractSection(rawText, "Original Language:", getEndMarkersForSection("Original Language:"));
+    if (originalLanguageText) {
+      originalLanguage = originalLanguageText;
     }
 
-    const engLyricsText = extractSection(rawText, "English Lyrics:", getEndMarkersForSection("English Lyrics:"));
-    if (engLyricsText && engLyricsText.toLowerCase() !== "not available" && engLyricsText.toLowerCase() !== "full lyrics restricted") {
-      englishLyrics = engLyricsText;
+    const originalLyricsText = extractSection(rawText, "Original Lyrics:", getEndMarkersForSection("Original Lyrics:"));
+    if (originalLyricsText) {
+      originalLyrics = originalLyricsText;
     }
+    
+    const engLyricsText = extractSection(rawText, "English Lyrics:", getEndMarkersForSection("English Lyrics:"));
+    if (engLyricsText) {
+      if (engLyricsText.toLowerCase() === "same as original lyrics" && originalLyrics) {
+        englishLyrics = originalLyrics;
+      } else {
+        englishLyrics = engLyricsText;
+      }
+    }
+
+    // If original language is English and original lyrics are set, ensure English lyrics match.
+    if (originalLanguage?.toLowerCase().includes("english") && originalLyrics) {
+        englishLyrics = originalLyrics;
+    }
+    // If original lyrics are not provided but English lyrics are, and original language is English, set original to English.
+    if (!originalLyrics && englishLyrics !== "English lyrics not available or not found." && originalLanguage?.toLowerCase().includes("english")) {
+        originalLyrics = englishLyrics;
+    }
+
 
     const romLyricsText = extractSection(rawText, "Romanized Lyrics:", getEndMarkersForSection("Romanized Lyrics:"));
-    if (romLyricsText && romLyricsText.toLowerCase() !== "not applicable" && romLyricsText.toLowerCase() !== "not available" && romLyricsText.toLowerCase() !== "full lyrics restricted") {
+    if (romLyricsText) {
       romanizedLyrics = romLyricsText;
     }
     
     let finalArtistBio = artistMetadata?.bio;
-    let finalEnglishLyrics = englishLyrics;
-    let finalRomanizedLyrics = romanizedLyrics;
+    // Simplified: the previous logic to detect lyrics inside bio was complex and error-prone.
+    // Relying on explicit sections is better.
 
-    if (finalArtistBio && 
-        (finalEnglishLyrics === "English lyrics not available or not found." || finalEnglishLyrics.trim() === "") &&
-        (!finalRomanizedLyrics || finalRomanizedLyrics.trim() === "")) {
-        const romanizedHeadingPattern = /(Romanized Lyrics for ".*?":\s*|Romanized Lyrics:\s*|English Lyrics for ".*?":\s*|English Lyrics:\s*)/i;
-        const match = finalArtistBio.match(romanizedHeadingPattern);
-        if (match && typeof match.index === 'number') {
-            const potentialLyricsContentBeforeHeading = finalArtistBio.substring(0, match.index).trim();
-            const potentialLyricsContentAfterHeading = finalArtistBio.substring(match.index + match[0].length).trim();
-            let bioContainedLyrics = false;
-            const primaryLyricsContent = potentialLyricsContentAfterHeading;
-            if (primaryLyricsContent.length > 50) { 
-                if (match[0].toLowerCase().includes("english")) {
-                    finalEnglishLyrics = primaryLyricsContent;
-                } else if (match[0].toLowerCase().includes("romanized")) {
-                    finalRomanizedLyrics = primaryLyricsContent;
-                } else { 
-                    finalEnglishLyrics = primaryLyricsContent;
-                }
-                bioContainedLyrics = true;
-            }
-            if (bioContainedLyrics && artistMetadata) {
-                if (potentialLyricsContentBeforeHeading.length < 100 || potentialLyricsContentBeforeHeading.split('\n').length > 3) {
-                    finalArtistBio = undefined;
-                } else {
-                    finalArtistBio = potentialLyricsContentBeforeHeading;
-                }
-            }
-        }
-    }
-    
     if (artistMetadata) {
         artistMetadata.bio = finalArtistBio; 
     }
@@ -199,8 +208,17 @@ Please ensure each section is clearly delineated.`;
             }));
     }
     
-    const result: LyricSearchResult = { songTitle, artistMetadata, songDescription, englishLyrics: finalEnglishLyrics, romanizedLyrics: finalRomanizedLyrics, sources };
-    console.log("[geminiService] Successfully processed request. Returning result to UI.");
+    const result: LyricSearchResult = { 
+      songTitle, 
+      artistMetadata, 
+      songDescription, 
+      originalLanguage,
+      originalLyrics,
+      englishLyrics, 
+      romanizedLyrics, 
+      sources 
+    };
+    console.log("[geminiService] Successfully processed request. Returning result to UI:", JSON.stringify(result, null, 2));
     return result;
 
   } catch (error: any) {
