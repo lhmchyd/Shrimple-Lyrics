@@ -22,7 +22,7 @@ Shrimple Lyric is a web application designed to help users find song lyrics, art
 *   **Frontend:** React, TypeScript
 *   **Styling:** Tailwind CSS (with a Shadcn UI-like theme)
 *   **API:** Google Gemini API (`@google/genai`)
-    *   Model: `gemini-2.5-flash-preview-04-17`
+    *   Model: `gemini-2.5-flash`
 *   **Local Storage:** IndexedDB
 *   **Build/Dev:** ES Modules via `esm.sh` (no local build step required for basic use)
 *   **Icons:** Lucide React (manually included SVGs)
@@ -176,5 +176,3 @@ The UI provides feedback when these limits are active.
 *   **API Key Security:**
     *   The default client-side API calls in `geminiService.ts` are convenient for quick local testing but **expose your API key**.
     *   For any deployment or more secure local development, modify `geminiService.ts` to route API calls through the `api/lyrics.ts` serverless function, which keeps your API key on the server-side, protected by environment variables.
-
----

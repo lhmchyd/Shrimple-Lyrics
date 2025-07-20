@@ -109,7 +109,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Query parameter is required' });
   }
 
-  const model = 'gemini-2.5-flash-preview-04-17';
+  const model = 'gemini-2.5-flash';
   const fullPrompt = `Please provide the following information for the song: "${query}".
 Use your knowledge and web search capabilities if needed.
 Structure your response exactly as follows, using these exact headings and newlines.

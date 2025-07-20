@@ -75,7 +75,7 @@ export const searchLyrics = async (query: string): Promise<LyricSearchResult> =>
     throw new Error(errorMessage);
   }
 
-  const model = 'gemini-2.5-flash-preview-04-17';
+  const model = 'gemini-2.5-flash';
   const fullPrompt = `Please provide the following information for the song: "${query}".
 Use your knowledge and web search capabilities if needed.
 Structure your response exactly as follows, using these exact headings and newlines.
@@ -239,6 +239,10 @@ Please ensure each section is clearly delineated.`;
         
         if (errorMessageLower.includes("api key not valid") || errorMessageLower.includes("permission_denied")) {
             throw new Error("The configured API Key is invalid or missing required permissions. Please check your Gemini API Key.");
+        }
+        // Check for the 404 error from the raw error object if it's a stringified JSON
+        if(typeof error.message === 'string' && error.message.includes('"code":404')) {
+             throw new Error("The API model could not be found. Please check if the model name is correct and available.");
         }
         throw new Error(`Failed to search lyrics: ${error.message}`);
     }
