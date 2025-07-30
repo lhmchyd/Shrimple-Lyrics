@@ -322,10 +322,11 @@ const App: React.FC = () => {
           </main>
            <SearchInputArea
               onSearch={handleSearchSubmit}
+              onSelectSuggestion={handleSelectHistory}
               isLoading={isSearchActionDisabled} 
               isChatActive={isChatActive}
-              initialQuery={searchInput} 
-              rateLimitMessage={isChatActive ? null : rateLimitMessage}
+              initialQuery={searchInput}
+              history={history} 
             />
         </div>
       </div>
@@ -357,12 +358,12 @@ const App: React.FC = () => {
         </div>
       </Modal>
 
-      {isChatActive && rateLimitMessage && (
+      {rateLimitMessage && (
         <div 
           className={`fixed left-1/2 -translate-x-1/2 z-[60] 
                      bg-destructive text-destructive-foreground 
                      px-4 py-2 rounded-md shadow-lg text-xs animate-fadeIn
-                     ${isMobileView ? 'top-[4.25rem]' : 'top-4'}`} // Adjust top for mobile header
+                     ${isChatActive && isMobileView ? 'top-[4.25rem]' : 'top-4'}`}
           role="alert"
           aria-live="assertive"
         >
